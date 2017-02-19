@@ -1,0 +1,102 @@
+div#content{
+    margin: 0 auto;
+    width: 75%;
+    max-width: 1024px;
+    min-width: 650px;
+}
+
+h1{
+    margin: .5em auto;
+    text-align: center;
+    font-size: 3em;
+}
+
+div#albums{
+    margin-top: 1em;
+}
+
+div.album{
+    overflow: auto;
+    margin: 1em;
+    border-radius: 2px;
+    padding: 1em;
+    background: #fffcf0;
+    color: #353534;
+}
+
+div.album div.overview{
+    position: relative;
+    overflow: auto;
+}
+
+div.album img{
+    float: left;
+    box-shadow: .25em .25em .25em rgba(0,0,0,0.25);
+    margin: 0 1em 0 0;
+}
+
+div.album div.title{
+    font-size: 1.25em;
+    font-weight: bold;
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+    display: block;
+    float: left;
+    margin-bottom: .5em;
+    width: calc(80% - 1em);
+}
+
+div.album div.info{
+    margin: 0.75em 0;
+}
+
+div.album i.status_icon{
+    position: absolute;
+    top: 0em;
+    right: 0em;
+}
+
+div.album span.view_details{
+    position: absolute;
+    bottom: 0em;
+    right: 0em;
+}
+
+div.album span.view_details i{
+    margin-left: 0.5em;
+}
+
+div.album div.details{
+    margin: 2em 0 0 0;
+}
+
+div.album div.details table{
+    border-collapse: collapse;
+    width: 100%;
+    margin-bottom: 1em;
+}
+div.album div.details table tr{
+    height: 1.75em;
+}
+
+div.album div.details table tr:nth-child(even){
+    background-color: rgba(0, 0, 0, 0.05);
+}
+
+div.album div.details table td{
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+    margin: 0 0 1em;
+}
+
+div.album div.details table td:nth-child(1),
+div.album div.details table td:nth-child(4){
+    width: 3em;
+    text-align: center;
+}
+
+div.album div.details table td:nth-child(3){
+    text-align: right;
+}

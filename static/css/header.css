@@ -1,0 +1,84 @@
+#header{
+    background-color: #353534;
+    height: 64px;
+    padding: 0;
+    margin: 0;
+    width: 100%;
+    border-bottom: 1px solid #cc963e;
+    clear: both;
+}
+
+#header_container{
+    max-width: 1024px;
+    margin: 0 auto;
+}
+
+#header img{
+    padding-left: 8px;
+}
+
+#nav{
+    float: right;
+    padding: 0;
+    margin: 0;
+    list-style: none;
+}
+
+#nav li{
+    float: right;
+    height: 64px;
+    line-height: 64px;
+    padding: 0 24px;
+    font-size: 1.5em;
+    box-sizing: border-box;
+}
+
+#nav li.current{
+    border-bottom: 4px solid #cc963e;
+}
+
+/* Dropdown Settings Menu */
+
+#nav li.settings{
+    position: relative;
+}
+
+#nav ul.settings_menu{
+    display: none;
+    position: absolute;
+    background: #eeeeee;
+    box-sizing: border-box;
+    border: 1px solid #bdbdbd;
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    width: 100%;
+    left: 0;
+}
+
+#nav ul.settings_menu li{
+    margin: 0;
+    padding: 0;
+    height: 2em;
+    line-height: 2em;
+    font-size: 0.60em;
+    display: block;
+    text-align: left;
+    width: 100%;
+    float: none;
+}
+
+#nav ul.settings_menu li i{
+  font-size: 0.9em;
+  margin: 0 0 0 0.5em;
+}
+
+#nav ul.settings_menu li:hover{
+    background-color: #f4693b;
+    color: white;
+}
+
+#nav li.settings:hover .settings_menu{
+    display: block;
+    z-index: 1;
+}

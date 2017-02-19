@@ -1,0 +1,32 @@
+div#content{
+    margin: 0 auto;
+    width: 75%;
+    max-width: 1024px;
+    min-width: 650px;
+    text-align: center;
+}
+
+ul#artist_list{
+    padding: 0;
+    margin: 2em 0 3em 0;
+    max-width: 1024px;
+    display: flex;
+    flex-direction: row;
+    flex-wrap: wrap;
+    justify-content: space-around;;
+}
+
+ul#artist_list li{
+    width: 150px;
+    margin: 2em 0.5em;
+    text-align: center;
+    cursor: pointer;
+}
+
+ul#artist_list li img{
+    height: 100px;
+    width: 100px;
+    margin: 0 auto;
+    border-radius: 2px;
+    margin-bottom: 0.25em;
+}
