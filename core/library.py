@@ -2,7 +2,6 @@ import os
 
 from hachoir_parser import createParser
 from hachoir_metadata import extractMetadata
-from core.movieinfo import TMDB
 from core import sqldb
 import PTN
 import datetime
@@ -14,7 +13,6 @@ logging = logging.getLogger(__name__)
 class ImportDirectory(object):
 
     def __init__(self):
-        self.tmdb = TMDB()
         self.sql = sqldb.SQL()
         return
 

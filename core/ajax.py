@@ -12,7 +12,7 @@ from core.downloaders import nzbget, sabnzbd, transmission, qbittorrent, deluge
 from core.musicinfo import ITunes
 from core.notification import Notification
 from core.rss import predb
-from templates import movie_info_popup, movie_status_popup, plugin_conf_popup, status
+from templates import plugin_conf_popup
 
 logging = logging.getLogger(__name__)
 

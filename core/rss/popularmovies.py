@@ -1,5 +1,4 @@
 from core import ajax, sqldb
-from core.movieinfo import TMDB
 import json
 import logging
 import urllib2
@@ -10,7 +9,6 @@ logging = logging.getLogger(__name__)
 
 class PopularMoviesFeed(object):
     def __init__(self):
-        self.tmdb = TMDB()
         self.sql = sqldb.SQL()
         self.ajax = ajax.Ajax()
         return
