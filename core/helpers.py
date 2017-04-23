@@ -2,7 +2,63 @@ from base64 import b32decode as bd
 from random import choice as rc
 import hashlib
 import urllib2
+import random
+import unicodedata
 from lib import bencode
+from string import punctuation
+
+
+class Url(object):
+    ''' Creates url requests and sanitizes urls '''
+
+    user_agents = ['Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/55.0.2883.87 Safari/537.36',
+                   'Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/55.0.2883.87 Safari/537.36',
+                   'Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/55.0.2883.87 Safari/537.36',
+                   'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/56.0.2924.87 Safari/537.36',
+                   'Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/56.0.2924.87 Safari/537.36',
+                   'Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/56.0.2924.87 Safari/537.36',
+                   'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_12_2) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/55.0.2883.95 Safari/537.36',
+                   'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_12_3) AppleWebKit/602.4.8 (KHTML, like Gecko) Version/10.0.3 Safari/602.4.8',
+                   'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/55.0.2883.87 Safari/537.36'
+                   ]
+
+    trans = {i: u' ' for i in map(ord, '+.-_')}
+
+    @staticmethod
+    def request(url, post_data=None, headers={}):
+
+        headers['User-Agent'] = random.choice(Url.user_agents)
+
+        if post_data:
+            request = urllib2.Request(url, post_data, headers=headers)
+        else:
+            request = urllib2.Request(url, headers=headers)
+
+        return request
+
+    @staticmethod
+    def encode(s):
+        ''' URL-encode strings
+        Do not use with full url, only passed params
+        '''
+        s = unicode(s).translate(Url.trans)
+        s = unicodedata.normalize('NFKD', s).encode('ascii', 'ignore')
+        s = ''.join([i for i in s if i not in punctuation])
+        s = urllib2.quote(s.replace(' ', '+'), safe='+').lower()
+        return s
+
+    @staticmethod
+    def open(request, timeout=30):
+        ''' Opens and reads request
+        request: object urllib2 request
+
+        Returns... well... whatever the request read() is. Some kind of bytes.
+        '''
+
+        r = urllib2.urlopen(request, timeout=timeout)
+        response = r.read()
+        r.close()
+        return response
 
 
 class Conversions(object):
@@ -37,7 +93,6 @@ class Conversions(object):
         ''' Converts datetime object into human-readable format.
         :param dt: datetime object
         time: bool whether or not to include time, or just return date
-
         Returns str date formatted as "Monday, Jan 1st, at 12:00" (24hr time)
         '''
         if time:

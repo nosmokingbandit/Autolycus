@@ -3,7 +3,7 @@ import logging
 import urllib2
 import os
 import shutil
-from core.helpers import Comparisons
+from core.helpers import Comparisons, Url
 _k = Comparisons._k
 
 logging = logging.getLogger(__name__)
@@ -122,10 +122,11 @@ class ITunes(object):
 
         url = u'https://itunes.apple.com/lookup?id={}&entity=album'.format(artist_id)
 
-        request = urllib2.Request(url, headers={'User-Agent': 'Mozilla/5.0'})
+        request = Url.request(url)
         try:
-            response = json.load(urllib2.urlopen(request))
-            if response.get('resultCount') == 0:
+            response = Url.open(request)
+            response = json.loads(response)
+            if response.get('resultCount', 0) == 0:
                 return None
             else:
                 albums = response['results'][1:]
@@ -159,6 +160,51 @@ class ITunes(object):
             albums.append(tmp[i])
 
         return albums
+
+    def get_album(self, album_id):
+        url = u'https://itunes.apple.com/lookup?albumId={}&entity=song'.format(album_id)
+
+        request = Url.request(url)
+        try:
+            response = Url.open(request)
+            response = json.loads(response)
+            if response.get('resultCount', 0) == 0:
+                return None
+            else:
+                album = response['results']
+        except (SystemExit, KeyboardInterrupt):
+            raise
+        except Exception, e: # noqa
+            logging.error(u'iTunes search.', exc_info=True)
+            return None
+
+        image_url = album[0]['artworkUrl100']
+
+        parsed_album = {}
+        tracks = album[1:]
+        parsed_tracks = []
+        disc_count = 1
+        for track in tracks:
+            if track['discCount'] > disc_count:
+                disc_count = track['discCount']
+            parsed_tracks.append({'title': track['trackName'],
+                                  'preview_url': track['previewUrl'],
+                                  'track_id': str(track['trackId']),
+                                  'track_number': track['trackNumber'],
+                                  'disc_number': track.get('discNumber', 1),
+                                  'length': (track['trackTimeMillis'] / 1000)
+                                  })
+
+        parsed_album = {'artist_id': tracks[0]['artistId'],
+                        'album_id': album_id,
+                        'disc_count': disc_count,
+                        'track_count': tracks[0]['trackCount'],
+                        'tracks': parsed_tracks,
+                        'album_title': tracks[0]['collectionName'],
+                        'status': 'Wanted'
+                        }
+
+        return
 
     def get_tracks(self, album_id):
         ''' Gets all track info for album_id

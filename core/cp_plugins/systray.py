@@ -7,9 +7,6 @@ import core
 from cherrypy.process import plugins
 from infi.systray import SysTrayIcon
 
-logging = logging.getLogger(__name__)
-
-
 class SysTrayPlugin(plugins.SimplePlugin):
     '''
     CherryPy plugin that creates a system tray icon for Windows.
@@ -76,6 +73,6 @@ class SysTrayPlugin(plugins.SimplePlugin):
 
     # sys tray functions:
     def open(self, systray):
-        webbrowser.open('http://{}:{}{}'.format(
+        webbrowser.open(u'http://{}:{}{}'.format(
             core.SERVER_ADDRESS, core.SERVER_PORT, core.URL_BASE))
         return

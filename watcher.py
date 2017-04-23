@@ -1,11 +1,11 @@
-# Discogs for artist info
-# spotify for new albums
-
 import argparse
+import locale
 import logging
 import os
 import ssl
 import sys
+reload(sys)
+sys.setdefaultencoding('utf-8')
 import webbrowser
 sys.path.insert(0, os.path.join(os.path.dirname(os.path.realpath(__file__)), 'lib'))
 
@@ -24,11 +24,22 @@ if sys.version_info < MIN_PYTHON:
     sys.stderr.write("Python 2.7.9 or later is required \n")
     sys.exit(1)
 
-core.PROG_PATH = os.path.dirname(os.path.realpath(__file__))
+core.PROG_PATH = unicode(os.path.dirname(os.path.realpath(__file__)))
 os.chdir(core.PROG_PATH)
 
 if __name__ == '__main__':
     ssl._create_default_https_context = ssl._create_unverified_context
+
+    # have to set locale for date parsing
+    try:
+        locale.setlocale(locale.LC_ALL, 'en_US.UTF-8')
+    except Exception, e:
+        try:
+            # for windows
+            locale.setlocale(locale.LC_ALL, 'English_United States.1252')
+        except Exception, e:
+            logging.warning('Unable to set locale. Date parsing may not work correctly.')
+            print 'Unable to set locale. Date parsing may not work correctly.'
 
     # parse user-passed arguments
     parser = argparse.ArgumentParser(description="Watcher Server App")
@@ -66,7 +77,7 @@ if __name__ == '__main__':
     conf = config.Config()
     if not os.path.isfile(core.CONF_FILE):
         print u'Config file not found. Creating new basic config {}. ' \
-            'Please review settings.'.format(core.CONF_FILE)
+            u'Please review settings.'.format(core.CONF_FILE)
         conf.new_config()
     else:
         print 'Config file found, merging any new options.'
@@ -132,7 +143,7 @@ if __name__ == '__main__':
 
     # if everything goes well so far, open the browser
     if passed_args.browser or core.CONFIG['Server']['launchbrowser']:
-        webbrowser.open("http://{}:{}{}".format(
+        webbrowser.open(u"http://{}:{}{}".format(
             core.SERVER_ADDRESS, core.SERVER_PORT, core.URL_BASE))
         logging.info(u'Launching web browser.')
 

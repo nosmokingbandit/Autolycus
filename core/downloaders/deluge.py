@@ -6,7 +6,7 @@ import zlib
 from lib.deluge_client import DelugeRPCClient
 
 import core
-from core.helpers import Torrent
+from core.helpers import Torrent, Url
 
 logging = logging.getLogger(__name__)
 
@@ -32,7 +32,7 @@ class DelugeRPC(object):
         try:
             error = client.connect()
             if error:
-                return '{}.'.format(error)
+                return u'{}.'.format(error)
         except Exception, e:
             return str(e)
         return True
@@ -65,10 +65,10 @@ class DelugeRPC(object):
         try:
             def_download_path = client.call('core.get_config')['download_location']
         except Exception, e:
-            logging.error('Unable to get download path.', exc_info=True)
+            logging.error(u'Unable to get download path.', exc_info=True)
             return {'response': False, 'error': 'Unable to get download path.'}
 
-        download_path = '{}/{}'.format(def_download_path, conf['category'])
+        download_path = u'{}/{}'.format(def_download_path, conf['category'])
 
         priority_keys = {
             'Normal': 0,
@@ -86,14 +86,14 @@ class DelugeRPC(object):
                 download_id = client.call('core.add_torrent_magnet', data['torrentfile'], options)
                 return {'response': True, 'downloadid': download_id}
             except Exception, e:
-                logging.error('Unable to send magnet.', exc_info=True)
+                logging.error(u'Unable to send magnet.', exc_info=True)
                 return {'response': False, 'error': str(e)}
         elif data['type'] == u'torrent':
             try:
                 download_id = client.call('core.add_torrent_url', data['torrentfile'], options)
                 return {'response': True, 'downloadid': download_id}
             except Exception, e:
-                logging.error('Unable to send magnet.', exc_info=True)
+                logging.error(u'Unable to send magnet.', exc_info=True)
                 return {'response': False, 'error': str(e)}
         return
 
@@ -103,6 +103,8 @@ class DelugeWeb(object):
     cookie = None
     retry = False
     command_id = 0
+
+    headers = {'Content-Type': 'application/json', 'User-Agent': 'Watcher'}
 
     @staticmethod
     def test_connection(data):
@@ -137,7 +139,13 @@ class DelugeWeb(object):
 
         host = conf['host']
         port = conf['port']
-        url = '{}:{}/json'.format(host, port)
+        url = u'{}:{}/json'.format(host, port)
+
+        priority_keys = {
+            'Normal': 0,
+            'High': 128,
+            'Max': 255
+        }
 
         # check cookie validity while getting default download dir
         download_dir = DelugeWeb._get_download_dir(url)
@@ -153,13 +161,15 @@ class DelugeWeb(object):
             return {'response': False, 'error': 'Unable to get path information.'}
         # if we got download_dir we can connect.
 
-        download_dir = '{}/{}'.format(download_dir, conf['category'])
+        download_dir = u'{}/{}'.format(download_dir, conf['category'])
 
-        priority_keys = {
-            'Normal': 0,
-            'High': 128,
-            'Max': 255
-        }
+        # if file is a torrent, have deluge download it to a tmp dir
+        if data['type'] == 'torrent':
+            tmp_torrent_file = DelugeWeb._get_torrent_file(data['torrentfile'], url)
+            if tmp_torrent_file['response'] is True:
+                data['torrentfile'] = tmp_torrent_file['torrentfile']
+            else:
+                return {'response': False, 'error': tmp_torrent_file['error']}
 
         torrent = {'path': data['torrentfile'], 'options': {}}
         torrent['options']['add_paused'] = conf['addpaused']
@@ -173,11 +183,11 @@ class DelugeWeb(object):
         DelugeWeb.command_id += 1
 
         post_data = json.dumps(command)
-        request = urllib2.Request(url, post_data, headers={'User-Agent': 'Mozilla/5.0'})
+        request = Url.request(url, post_data=post_data, headers=DelugeWeb.headers)
         request.add_header('cookie', DelugeWeb.cookie)
 
         try:
-            response = DelugeWeb._read(urllib2.urlopen(request))
+            response = DelugeWeb._read(Url.open(request))
             if response['result'] is True:
                 downloadid = Torrent.get_hash(data['torrentfile'])
                 return {'response': True, 'downloadid': downloadid}
@@ -187,6 +197,26 @@ class DelugeWeb(object):
             raise
         except Exception, e:
             logging.error(u'Delugeweb add_torrent', exc_info=True)
+            return {'response': False, 'error': str(e)}
+
+    @staticmethod
+    def _get_torrent_file(torrent_url, deluge_url):
+        command = {'method': 'web.download_torrent_from_url',
+                   'params': [torrent_url],
+                   'id': DelugeWeb.command_id
+                   }
+        DelugeWeb.command_id += 1
+        post_data = json.dumps(command)
+        request = Url.request(deluge_url, post_data=post_data, headers=DelugeWeb.headers)
+        request.add_header('cookie', DelugeWeb.cookie)
+        try:
+            response = DelugeWeb._read(Url.open(request))
+            if response['error'] is None:
+                return {'response': True, 'torrentfile': response['result']}
+        except (SystemExit, KeyboardInterrupt):
+            raise
+        except Exception, e: #noqa
+            logging.error(u'Delugeweb download_torrent_from_url', exc_info=True)
             return {'response': False, 'error': str(e)}
 
     @staticmethod
@@ -200,11 +230,11 @@ class DelugeWeb(object):
 
         post_data = json.dumps(command)
 
-        request = urllib2.Request(url, post_data, headers={'User-Agent': 'Mozilla/5.0'})
+        request = Url.request(url, post_data=post_data, headers=DelugeWeb.headers)
         request.add_header('cookie', DelugeWeb.cookie)
 
         try:
-            response = DelugeWeb._read(urllib2.urlopen(request))
+            response = DelugeWeb._read(Url.open(request))
             return response['result']
         except urllib2.HTTPError:
             return False
@@ -217,7 +247,7 @@ class DelugeWeb(object):
         ''' Reads gzipped json response into dict
         '''
 
-        return json.loads(zlib.decompress(response.read(), 16+zlib.MAX_WBITS))
+        return json.loads(zlib.decompress(response, 16+zlib.MAX_WBITS))
 
     @staticmethod
     def _login(url, password):
@@ -230,7 +260,7 @@ class DelugeWeb(object):
 
         post_data = json.dumps(command)
 
-        request = urllib2.Request(url, post_data, headers={'User-Agent': 'Mozilla/5.0'})
+        request = Url.request(url, post_data, headers=DelugeWeb.headers)
 
         try:
             response = urllib2.urlopen(request)
@@ -244,9 +274,8 @@ class DelugeWeb(object):
             else:
                 return response.msg
 
-            return True
         except (SystemExit, KeyboardInterrupt):
             raise
         except Exception, e:
             logging.error(u'DelugeWeb test_connection', exc_info=True)
-            return '{}.'.format(e.reason)
+            return u'{}.'.format(e.reason)

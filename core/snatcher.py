@@ -3,7 +3,7 @@ from datetime import datetime
 import urllib2
 import core
 from core import plugins, sqldb, updatestatus
-from core.downloaders import deluge, qbittorrent, nzbget, sabnzbd, transmission
+from core.downloaders import deluge, qbittorrent, nzbget, sabnzbd, transmission, rtorrent
 
 logging = logging.getLogger(__name__)
 

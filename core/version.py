@@ -9,6 +9,7 @@ import urllib2
 import zipfile
 
 import core
+from core.helpers import Url
 
 # get remote hash # git rev-parse origin/master
 # get local hash  # git rev-parse HEAD
@@ -130,7 +131,7 @@ class GitUpdater(object):
     def check_git_available(self):
         git_available = self.git.available()
         if git_available[2] == 1:
-            logging.info(u'Could not execute git: {}'.format(git_available[0]))
+            logging.error(u'Could not execute git: {}'.format(git_available[0]))
             return git_available
         else:
             return git_available
@@ -158,7 +159,7 @@ class GitUpdater(object):
         pull = self.git.pull()
 
         if pull[2] == 1:
-            logging.info(u'Update failed: {}'.format(pull[0]))
+            logging.error(u'Update failed: {}'.format(pull[0]))
             return False
         else:
             logging.info(u'Update successful.')
@@ -277,10 +278,11 @@ class ZipUpdater(object):
 
     def get_newest_hash(self):
         api_url = u'{}/commits/{}'.format(core.GIT_API, core.CONFIG['Server']['gitbranch'])
-        request = urllib2.Request(api_url, headers={'User-Agent': 'Mozilla/5.0'})
+        request = Url.request(api_url)
         try:
-            response = json.load(urllib2.urlopen(request))
-            hash = response['sha']
+            response = Url.open(request)
+            result = json.loads(response)
+            hash = result['sha']
         except (SystemExit, KeyboardInterrupt):
             raise
         except Exception, e: # noqa
@@ -322,10 +324,11 @@ class ZipUpdater(object):
 
         compare_url = u'{}/compare/{}...{}'.format(core.GIT_API, newest_hash, local_hash)
 
-        request = urllib2.Request(compare_url, headers={'User-Agent': 'Mozilla/5.0'})
+        request = Url.request(compare_url)
         try:
-            response = json.load(urllib2.urlopen(request))
-            behind_count = response['behind_by']
+            response = Url.open(request)
+            result = json.loads(response)
+            behind_count = result['behind_by']
         except (SystemExit, KeyboardInterrupt):
             raise
         except Exception, e: # noqa
@@ -388,7 +391,6 @@ class ZipUpdater(object):
         os.chdir(core.PROG_PATH)
         update_zip = u'update.zip'
         update_path = u'update'
-        backup_path = os.path.join(update_path, 'backup')
         new_hash = self.get_newest_hash()
 
         logging.info(u'Updating from Zip file.')
@@ -409,11 +411,12 @@ class ZipUpdater(object):
 
         logging.info(u'Downloading latest Zip.')
         zip_url = u'{}/archive/{}.zip'.format(core.GIT_URL, core.CONFIG['Server']['gitbranch'])
-        request = urllib2.Request(zip_url, headers={'User-Agent': 'Mozilla/5.0'})
+        request = Url.request(zip_url)
         try:
-            zip_response = urllib2.urlopen(request).read()
+            zip_response = Url.open(request)
             with open(update_zip, 'wb') as f:
                 f.write(zip_response)
+            del zip_response
         except Exception, e:
             logging.error(u'Could not download latest Zip.', exc_info=True)
             return False

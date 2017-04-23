@@ -4,7 +4,7 @@ import urllib
 import urllib2
 
 import core
-from core.helpers import Torrent
+from core.helpers import Torrent, Url
 
 logging = logging.getLogger(__name__)
 
@@ -47,7 +47,7 @@ class QBittorrent(object):
 
         host = conf['host']
         port = conf['port']
-        base_url = '{}:{}/'.format(host, port)
+        base_url = u'{}:{}/'.format(host, port)
 
         user = conf['user']
         password = conf['pass']
@@ -69,45 +69,45 @@ class QBittorrent(object):
 
         post_data['urls'] = data['torrentfile']
 
-        post_data['savepath'] = '{}{}'.format(download_dir, conf['category'])
+        post_data['savepath'] = u'{}{}'.format(download_dir, conf['category'])
 
         post_data['category'] = conf['category']
 
-        req_url = u'{}command/download'.format(base_url)
+        url = u'{}command/download'.format(base_url)
         post_data = urllib.urlencode(post_data)
-        request = urllib2.Request(req_url, post_data, headers={'User-Agent': 'Mozilla/5.0'})
+        request = Url.request(url, post_data=post_data)
         request.add_header('cookie', QBittorrent.cookie)
 
         try:
-            urllib2.urlopen(request)  # QBit returns an empty string
+            Url.open(request)  # QBit returns an empty string
             downloadid = Torrent.get_hash(data['torrentfile'])
             return {'response': True, 'downloadid': downloadid}
         except (SystemExit, KeyboardInterrupt):
             raise
         except Exception, e:
-            logging.error(u'qbittorrent test_connection', exc_info=True)
+            logging.error(u'QBittorrent connection test failed.', exc_info=True)
             return {'response': False, 'error': str(e.reason)}
 
     @staticmethod
     def _get_download_dir(base_url):
         try:
             url = u'{}query/preferences'.format(base_url)
-            request = urllib2.Request(url, headers={'User-Agent': 'Mozilla/5.0'})
+            request = Url.request(url)
             request.add_header('cookie', QBittorrent.cookie)
-            response = json.loads(urllib2.urlopen(request).read())
+            response = json.loads(Url.open(request))
             return response['save_path']
         except urllib2.HTTPError:
             return False
         except Exception, e:
-            logging.error(u'qbittorrent get_download_dir', exc_info=True)
+            logging.error(u'QBittorrent unable to get download dir.', exc_info=True)
             return {'response': False, 'error': str(e.reason)}
 
     @staticmethod
     def get_torrents(base_url):
         url = u'{}query/torrents'.format(base_url)
-        request = urllib2.Request(url, headers={'User-Agent': 'Mozilla/5.0'})
+        request = Url.request(url)
         request.add_header('cookie', QBittorrent.cookie)
-        return urllib2.urlopen(request).read()
+        return Url.open(request)
 
     @staticmethod
     def _login(url, username, password):
@@ -119,49 +119,23 @@ class QBittorrent(object):
         post_data = urllib.urlencode(data)
 
         url = u'{}login'.format(url)
-        request = urllib2.Request(url, post_data, headers={'User-Agent': 'Mozilla/5.0'})
+        request = Url.request(url, post_data=post_data)
 
         try:
             response = urllib2.urlopen(request)
             QBittorrent.cookie = response.headers.get('Set-Cookie')
-            response = response.read()
+            result = response.read()
+            response.close()
 
-            if response == 'Ok.':
+            if result == 'Ok.':
                 return True
-            elif response == 'Fails.':
+            elif result == 'Fails.':
                 return u'Incorrect usename or password'
             else:
-                return response
+                return result
 
         except (SystemExit, KeyboardInterrupt):
             raise
         except Exception, e:
             logging.error(u'qbittorrent test_connection', exc_info=True)
             return u'{}.'.format(str(e.reason))
-
-
-'''
-{
-u'category': u'Watcher',
-u'num_incomplete': -1,
-u'num_complete': -1,
-u'force_start': False,
-u'hash': u'e1e8bc80e9e34547661d16f03d10756421d8278c',
-u'name': u'Toy Story 3 (BDrip 1080p ENG-ITA DTS) X264 bluray (2010)',
-u'completion_on': 4294967295L,
-u'super_seeding': False,
-u'seq_dl': False,
-u'num_seeds': 0,
-u'upspeed': 0,
-u'priority': 1,
-u'state': u'pausedDL',
-u'eta': 8640000,
-u'added_on': 1484858904,
-u'save_path': u'C:\\Users\\Steven\\Downloads\\',
-u'num_leechs': 0,
-u'progress': 0,
-u'size': 0,
-u'dlspeed': 0,
-u'ratio': 0
-}
-'''

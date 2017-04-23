@@ -4,6 +4,7 @@ from datetime import datetime
 import json
 import core
 from core import sqldb
+from core.helpers import Url
 from fuzzywuzzy import fuzz
 
 logging = logging.getLogger(__name__)
@@ -87,36 +88,6 @@ class ScoreResults():
     def reset(self):
         for i, d in enumerate(self.results):
             self.results[i]['score'] = 0
-
-    def remove_inactive(self):
-        ''' Removes results from indexers no longer enabled
-
-        Pulls active indexers from config, then removes any
-            result that isn't from an active indexer.
-
-        Does not filter Torrent results.
-            Since torrent names don't always match their domain
-            ie demonoid == dnoid.me, we can't filter out disabled torrent
-            indexers since all would be removed
-
-        Does not return, modifies self.results
-        '''
-
-        active = []
-        for i in core.CONFIG['Indexers']['NewzNab'].values():
-            if i[2] is True:
-                active.append(i[0])
-
-        keep = []
-        for result in self.results:
-            if result['type'] in ['torrent', 'magnet', 'import']:
-                keep.append(result)
-            for indexer in active:
-                if indexer in result['guid']:
-                    keep.append(result)
-
-        self.results = keep
-        return
 
     def remove_ignored(self, group_list):
         ''' Remove results with ignored groups of 'words'

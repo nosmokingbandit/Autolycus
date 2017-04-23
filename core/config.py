@@ -25,18 +25,6 @@ class Config():
         self.file = core.CONF_FILE
         self.base_file = u'core/base_config.cfg'
 
-    def is_json(self):
-        ''' Tests if confile file is JSON or legacy ConfigParser
-        Returns bool
-        '''
-
-        with open(self.file) as f:
-            try:
-                json.load(f)
-            except ValueError, e: #noqa
-                return False
-            return True
-
     def new_config(self):
         ''' Copies base_file to config directory.
 
@@ -63,7 +51,7 @@ class Config():
 
         with open(self.file, 'w') as f:
             json.dump(config, f, indent=4, sort_keys=True)
-        return 'Config created at {}'.format(self.file)
+        return u'Config created at {}'.format(self.file)
 
     def write_dict(self, data):
         ''' Writes a dict to the config file.
@@ -98,9 +86,6 @@ class Config():
 
         Does not return
         '''
-
-        if not self.is_json():
-            self.convert()
 
         new_config = {}
 
@@ -149,121 +134,6 @@ class Config():
         core.CONFIG = config
 
         return
-
-    def convert(self):
-        ''' Converts legacy configparser config to json
-
-        Backs up original config as config.cfg.backup
-
-        Does not return
-        '''
-
-        with open(self.file, 'r') as f:
-            self.configparser.readfp(f)
-            config = json.loads(json.dumps(self.configparser._sections))
-
-        print 'Converting legacy config file.'
-
-        backup = '{}.backup'.format(self.file)
-        shutil.move(self.file, backup)
-
-        print 'Original config backed up as {}'.format(backup)
-
-        # remove all '__name__' keys
-        for i in config:
-            if '__name__' in config[i]:
-                del config[i]['__name__']
-
-        # load jsons into dict
-        r = []
-        for k, v in config['Quality'].iteritems():
-            try:
-                config['Quality'][k] = json.loads(v)
-            except Exception:
-                r.append(k)
-                continue
-        for i in r:
-            del config['Quality'][i]
-
-        for k, v in config['Plugins'].iteritems():
-            config['Plugins'][k] = json.loads(v)
-
-        # split Indexers values into lists
-        for k, v in config['Indexers'].iteritems():
-            config['Indexers'][k] = v.split(',')
-        for k, v in config['PotatoIndexers'].iteritems():
-            config['PotatoIndexers'][k] = v.split(',')
-
-        config = self.to_int(config)
-
-        config_string = json.dumps(config)
-        config_string = config_string.replace('"true"', 'true').replace('"false"', 'false')
-        config_string = config_string.replace('"True"', 'true').replace('"False"', 'false')
-        config = json.loads(config_string)
-
-        # Now we have a functional json object turned dict as 'config'
-        # So we'll move keys where they need to be
-
-        config['Downloader'] = {}
-        config['Downloader']['Torrent'] = {}
-        config['Downloader']['Usenet'] = {}
-        config['Downloader']['Sources'] = {}
-
-        torrent = ['DelugeRPC', 'DelugeWeb', 'Transmission', 'QBittorrent']
-
-        for i in torrent:
-            config['Downloader']['Torrent'][i] = config.pop(i)
-            for a, b in config['Downloader']['Torrent'][i].iteritems():
-                new_a = a.replace(i.lower(), '')
-                config['Downloader']['Torrent'][i][new_a] = config['Downloader']['Torrent'][i].pop(a)
-
-        usenet = ['NzbGet', 'Sabnzbd']
-        for i in usenet:
-            config['Downloader']['Usenet'][i] = config.pop(i)
-            for a, b in config['Downloader']['Usenet'][i].iteritems():
-                new_a = a.replace('nzbg', '').replace('sab', '')
-                config['Downloader']['Usenet'][i][new_a] = config['Downloader']['Usenet'][i].pop(a)
-
-        config['Downloader']['Sources'] = config.pop('Sources')
-
-        tmp_indexers = config.pop('Indexers')
-        config['Indexers'] = {}
-        config['Indexers']['NewzNab'] = tmp_indexers
-
-        config['Indexers']['Torrent'] = config.pop('TorrentIndexers')
-
-        config['Indexers']['TorrentPotato'] = config.pop('PotatoIndexers')
-
-        title = config['Search'].pop('score_title')
-        prefer = config['Quality']['prefersmaller']
-        tmp_quality = config.pop('Quality')
-        config['Quality'] = {}
-        config['Quality']['Profiles'] = {}
-        for k, v in tmp_quality.iteritems():
-            if k == 'prefersmaller':
-                continue
-            else:
-                config['Quality']['Profiles'][k] = v
-                config['Quality']['Profiles'][k]['prefersmaller'] = prefer
-                config['Quality']['Profiles'][k]['scoretitle'] = title
-
-        config['Search']['Watchlists'] = {}
-        config['Search']['Watchlists']['imdbsync'] = config['Search'].pop('imdbsync')
-        config['Search']['Watchlists']['imdbfrequency'] = config['Search'].pop('imdbfrequency')
-        config['Search']['Watchlists']['imdbrss'] = config['Search'].pop('imdbrss')
-
-        config['Server']['customwebroot'] = config['Proxy']['behindproxy']
-        config['Server']['customwebrootpath'] = config['Proxy']['webroot']
-        config.pop('Proxy')
-
-        config.pop('Filters', None)
-
-        with open(self.file, 'w') as f:
-            json.dump(config, f, indent=4, sort_keys=True)
-
-        print 'Config converted'
-
-        return config
 
     def to_int(self, config):
         new = {}

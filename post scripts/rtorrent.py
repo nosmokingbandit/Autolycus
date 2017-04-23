@@ -2,19 +2,18 @@
 # ======================================== #
 # ============= INSTRUCTIONS ============= #
 
-# Add file to Deluge's Execute plugin for event Torrent Complete
-
+# Copy this line to ~/.rtorrent.rc, replacing /PATH/TO/THIS/FILE.py with the actual file path.
+# system.method.set_key = event.download.finished,Watcher,"execute={/usr/bin/python,/PATH/TO/THIS/FILE.py,\"$d.get_custom1=\",\"$d.get_name=\",\"$d.get_hash=\",\"$d.get_base_path=\"}"
+#
 # Add api information to conf:
 
 watcherapi = 'APIKEY'
 watcheraddress = u'http://localhost:9090/'
-category = 'Watcher'
+label = 'Watcher'
 
 #  DO NOT TOUCH ANYTHING BELOW THIS LINE!  #
 # ======================================== #
-
 import json
-import os
 import sys
 import urllib
 import urllib2
@@ -23,23 +22,22 @@ data = {}
 
 args = sys.argv
 
-download_dir = args[3]
+script, tor_label, name, downloadid, path = sys.argv
 
-while download_dir[-1] in ['/', '\\']:
-    download_dir = download_dir[:-1]
-
-parent_folder = os.path.split(download_dir)[-1]
-
-if parent_folder.lower() != category.lower():
-    # Not watcher category
+if label != tor_label:
+    print 'Label doesn\'t match config. Ignoring this download.'
     sys.exit(0)
+
+
+while path[-1] in ['/', '\\']:
+    path = path[:-1]
 
 data['apikey'] = watcherapi
 
-data['name'] = args[2]
-data['path'] = u'{}/{}'.format(download_dir, args[2])
-data['downloadid'] = args[1]
-data['guid'] = args[1]
+data['name'] = name
+data['path'] = path
+data['downloadid'] = downloadid
+data['guid'] = downloadid
 data['mode'] = 'complete'
 
 url = u'{}/postprocessing/'.format(watcheraddress)

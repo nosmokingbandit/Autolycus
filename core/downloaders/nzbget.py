@@ -25,10 +25,10 @@ class Nzbget():
 
         https = False
         if https:
-            url = "https://{}:{}/{}:{}/xmlrpc".format(host, port, user, passw)
+            url = u"https://{}:{}/{}:{}/xmlrpc".format(host, port, user, passw)
             nzbg_server = ServerProxy(url)
         else:
-            url = "http://{}:{}/{}:{}/xmlrpc".format(host, port, user, passw)
+            url = u"http://{}:{}/{}:{}/xmlrpc".format(host, port, user, passw)
             nzbg_server = ServerProxy(url)
 
         try:
@@ -38,7 +38,7 @@ class Nzbget():
             raise
         except Exception, e:
             logging.error(u'Nzbget test_connection', exc_info=True)
-            return '{}.'.format(e)
+            return u'{}.'.format(e)
 
     @staticmethod
     def add_nzb(data):
@@ -57,9 +57,9 @@ class Nzbget():
 
         https = False
         if https:
-            url = "https://{}:{}/{}:{}/xmlrpc".format(host, port, user, passw)
+            url = u"https://{}:{}/{}:{}/xmlrpc".format(host, port, user, passw)
         else:
-            url = "http://{}:{}/{}:{}/xmlrpc".format(host, port, user, passw)
+            url = u"http://{}:{}/{}:{}/xmlrpc".format(host, port, user, passw)
 
         nzbg_server = ServerProxy(url)
 
@@ -85,7 +85,8 @@ class Nzbget():
 
         try:
             response = nzbg_server.append(filename, contenturl, category, priority, False, paused, dupekey, dupescore, dupemode)
+            logging.info('NZB sent to NZBGet - downloadid {}'.format(response))
             return {'response': True, 'downloadid': response}
-
         except Exception, e:
+            logging.error('Unable to add NZB to NZBGet.')
             return {'response': False, 'error': str(e)}
